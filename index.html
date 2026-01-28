@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free client-side SRT subtitle generator with Burmese language support">
+    <meta name="keywords" content="subtitle, SRT, generator, Burmese, Myanmar, free, open-source">
+    <title>SRT Generator - Free Subtitle Creator</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <i data-lucide="subtitles" class="header-icon"></i>
+                    <h1 class="header-title">SRT Generator</h1>
+                    <span class="header-badge">100% Free</span>
+                </div>
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+                    <i data-lucide="sun" class="icon-light"></i>
+                    <i data-lucide="moon" class="icon-dark"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Browser Compatibility Warning -->
+            <div id="browserWarning" class="alert alert-warning" style="display: none;">
+                <i data-lucide="alert-triangle"></i>
+                <div>
+                    <strong>Limited Browser Support</strong>
+                    <p>For best results, please use Chrome or Edge browser. Speech recognition may not work in your current browser.</p>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <section class="section upload-section">
+                <h2 class="section-title">
+                    <i data-lucide="upload"></i>
+                    Upload Audio or Video
+                </h2>
+                
+                <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Upload file area">
+                    <input type="file" id="fileInput" accept="audio/*,video/*" hidden>
+                    <i data-lucide="file-audio" class="drop-zone-icon"></i>
+                    <p class="drop-zone-title">Drag & drop your file here</p>
+                    <p class="drop-zone-text">or click to browse</p>
+                    <p class="drop-zone-formats">Supports: MP3, WAV, M4A, MP4, WebM, OGG</p>
+                </div>
+
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <div class="file-info-content">
+                        <i data-lucide="file-check"></i>
+                        <div class="file-info-details">
+                            <p class="file-info-name" id="fileName"></p>
+                            <p class="file-info-size" id="fileSize"></p>
+                        </div>
+                    </div>
+                    <button id="removeFile" class="btn-icon" aria-label="Remove file">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Language Selection -->
+            <section class="section language-section">
+                <h2 class="section-title">
+                    <i data-lucide="languages"></i>
+                    Language Settings
+                </h2>
+                
+                <div class="language-grid">
+                    <div class="form-group">
+                        <label for="sourceLanguage" class="form-label">
+                            Source Language (Audio)
+                        </label>
+                        <select id="sourceLanguage" class="form-select">
+                            <option value="en-US" selected>English (US)</option>
+                            <option value="en-GB">English (UK)</option>
+                            <option value="my-MM">Burmese (Myanmar)</option>
+                            <option value="zh-CN">Chinese (Mandarin)</option>
+                            <option value="es-ES">Spanish</option>
+                            <option value="fr-FR">French</option>
+                            <option value="de-DE">German</option>
+                            <option value="ja-JP">Japanese</option>
+                            <option value="ko-KR">Korean</option>
+                            <option value="th-TH">Thai</option>
+                            <option value="vi-VN">Vietnamese</option>
+                            <option value="id-ID">Indonesian</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetLanguage" class="form-label">
+                            Target Language (Subtitle)
+                            <span class="form-hint">Manual translation required</span>
+                        </label>
+                        <select id="targetLanguage" class="form-select">
+                            <option value="my">Burmese (မြန်မာ)</option>
+                            <option value="en">English</option>
+                            <option value="zh">Chinese (中文)</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i>
+                    <p>
+                        <strong>Note:</strong> The app will transcribe audio in the source language. 
+                        You can then manually translate or edit the subtitles in the editor below.
+                    </p>
+                </div>
+            </section>
+
+            <!-- AI Enhancement (Optional) -->
+            <section class="section ai-section">
+                <h2 class="section-title">
+                    <i data-lucide="sparkles"></i>
+                    AI Enhancement (Optional)
+                </h2>
+
+                <div class="ai-toggle-container">
+                    <label class="ai-toggle-label">
+                        <input type="checkbox" id="aiEnhancementToggle" class="ai-toggle-input">
+                        <span class="ai-toggle-switch"></span>
+                        <span class="ai-toggle-text">Enable AI-Powered Translation & Improvement</span>
+                    </label>
+                </div>
+
+                <div id="aiSettings" class="ai-settings" style="display: none;">
+                    <div class="form-group">
+                        <label for="aiProvider" class="form-label">
+                            AI Provider
+                        </label>
+                        <select id="aiProvider" class="form-select">
+                            <option value="none">None (Free Mode)</option>
+                            <option value="openai">OpenAI GPT</option>
+                            <option value="gemini">Google Gemini</option>
+                        </select>
+                    </div>
+
+                    <div id="aiKeySection" class="form-group" style="display: none;">
+                        <label for="aiApiKey" class="form-label">
+                            API Key
+                            <span class="form-hint">Your key is stored locally and never sent to our servers</span>
+                        </label>
+                        <div class="api-key-input-group">
+                            <input type="password" 
+                                   id="aiApiKey" 
+                                   class="form-select" 
+                                   placeholder="Enter your API key"
+                                   autocomplete="off">
+                            <button id="toggleApiKeyVisibility" class="btn-icon" aria-label="Toggle visibility">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                        <div class="api-key-actions">
+                            <button id="saveApiKey" class="btn btn-small btn-primary">
+                                <i data-lucide="save"></i>
+                                Save Key
+                            </button>
+                            <button id="clearApiKey" class="btn btn-small btn-secondary">
+                                <i data-lucide="trash-2"></i>
+                                Clear Key
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i data-lucide="alert-circle"></i>
+                        <div>
+                            <strong>Important Information</strong>
+                            <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+                                <li><strong>Completely Optional:</strong> All core features work without AI</li>
+                                <li><strong>Your API Key:</strong> Stored locally in your browser only</li>
+                                <li><strong>Costs:</strong> You pay your AI provider directly (typically $0.002-0.01 per subtitle)</li>
+                                <li><strong>Privacy:</strong> Text sent to AI provider for processing</li>
+                                <li><strong>Usage:</strong> Only for translation and text improvement, NOT for speech-to-text</li>
+                            </ul>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+                                <strong>Get API Keys:</strong><br>
+                                • OpenAI: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a><br>
+                                • Gemini: <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">makersuite.google.com</a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="aiActions" class="ai-actions" style="display: none;">
+                        <button id="translateWithAI" class="btn btn-primary">
+                            <i data-lucide="languages"></i>
+                            Translate All with AI
+                        </button>
+                        <button id="improveWithAI" class="btn btn-secondary">
+                            <i data-lucide="wand-2"></i>
+                            Improve All with AI
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Actions -->
+            <section class="section actions-section">
+                <div class="actions-grid">
+                    <button id="generateBtn" class="btn btn-primary" disabled>
+                        <i data-lucide="wand-2"></i>
+                        Generate Subtitles
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        <i data-lucide="refresh-cw"></i>
+                        Clear All
+                    </button>
+                </div>
+            </section>
+
+            <!-- Progress -->
+            <div id="progressSection" class="section progress-section" style="display: none;">
+                <div class="progress-header">
+                    <h3 class="progress-title">
+                        <i data-lucide="loader" class="icon-spin"></i>
+                        Processing...
+                    </h3>
+                    <p id="progressText" class="progress-text">Preparing audio...</p>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Subtitle Editor -->
+            <section id="editorSection" class="section editor-section" style="display: none;">
+                <div class="editor-header">
+                    <h2 class="section-title">
+                        <i data-lucide="edit-3"></i>
+                        Edit Subtitles
+                    </h2>
+                    <div class="editor-actions">
+                        <button id="addSubtitleBtn" class="btn btn-small">
+                            <i data-lucide="plus"></i>
+                            Add Subtitle
+                        </button>
+                    </div>
+                </div>
+
+                <div id="subtitleList" class="subtitle-list" role="list">
+                    <!-- Subtitle items will be dynamically added here -->
+                </div>
+
+                <div class="editor-footer">
+                    <p class="editor-info">
+                        <i data-lucide="lightbulb"></i>
+                        Tip: Click on any subtitle to edit the text or timestamps. Changes are updated in real-time.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Download Section -->
+            <section id="downloadSection" class="section download-section" style="display: none;">
+                <div class="download-card">
+                    <div class="download-info">
+                        <i data-lucide="download" class="download-icon"></i>
+                        <div>
+                            <h3 class="download-title">Your subtitles are ready!</h3>
+                            <p class="download-text" id="subtitleCount">0 subtitle entries</p>
+                        </div>
+                    </div>
+                    <button id="downloadBtn" class="btn btn-success">
+                        <i data-lucide="download"></i>
+                        Download SRT File
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">
+                Made with <i data-lucide="heart" class="footer-heart"></i> using 100% free and open-source technologies
+            </p>
+            <p class="footer-links">
+                <a href="https://github.com" target="_blank" rel="noopener" class="footer-link">
+                    <i data-lucide="github"></i>
+                    View on GitHub
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
