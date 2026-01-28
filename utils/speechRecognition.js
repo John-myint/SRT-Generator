@@ -175,9 +175,9 @@ export class SpeechTranscriber {
         this.audioElement = document.createElement('audio');
         this.audioElement.src = URL.createObjectURL(file);
         
-        // For speech recognition to work, audio needs to play
-        // We can mute it or keep volume low
-        this.audioElement.volume = 0.0; // Muted
+        // For speech recognition to work, audio needs to play at audible volume
+        // Web Speech API can't transcribe muted audio - it needs to "hear" it
+        this.audioElement.volume = 0.1; // Low volume (10%) but audible
         
         // Create recognition instance
         this.recognition = createRecognition(this.language, {
