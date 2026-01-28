@@ -33,6 +33,7 @@ import {
 
 import OpenAIProvider from './services/openai.js';
 import GeminiProvider from './services/gemini.js';
+import GoogleSpeechProvider from './services/googleSpeech.js';
 
 /**
  * Application State
@@ -45,6 +46,9 @@ const state = {
     sourceLanguage: 'en-US',
     targetLanguage: 'my',
     theme: 'light',
+    // Google Cloud Speech-to-Text
+    googleApiKey: localStorage.getItem('google_api_key') || '',
+    googleSpeechClient: null,
     // AI Enhancement
     aiEnabled: false,
     aiProvider: AI_PROVIDERS.NONE,
@@ -93,6 +97,12 @@ const elements = {
     // Theme
     themeToggle: document.getElementById('themeToggle'),
     
+    // Google Cloud Speech-to-Text
+    googleApiKey: document.getElementById('googleApiKey'),
+    toggleGoogleApiKeyVisibility: document.getElementById('toggleGoogleApiKeyVisibility'),
+    saveGoogleApiKey: document.getElementById('saveGoogleApiKey'),
+    clearGoogleApiKey: document.getElementById('clearGoogleApiKey'),
+    
     // AI Enhancement
     aiEnhancementToggle: document.getElementById('aiEnhancementToggle'),
     aiSettings: document.getElementById('aiSettings'),
@@ -118,6 +128,9 @@ function init() {
     
     // Load theme preference
     loadTheme();
+    
+    // Load Google Cloud settings
+    loadGoogleCloudSettings();
     
     // Load AI settings
     loadAISettings();
@@ -200,6 +213,11 @@ function setupEventListeners() {
     } else {
         console.error('❌ Theme toggle element not found!');
     }
+    
+    // Google Cloud Speech-to-Text
+    elements.toggleGoogleApiKeyVisibility.addEventListener('click', toggleGoogleApiKeyVisibility);
+    elements.saveGoogleApiKey.addEventListener('click', saveGoogleApiKey);
+    elements.clearGoogleApiKey.addEventListener('click', clearGoogleApiKey);
     
     // AI Enhancement
     elements.aiEnhancementToggle.addEventListener('change', toggleAIEnhancement);
@@ -288,7 +306,13 @@ function clearFile() {
 async function generateSubtitles() {
     if (!state.currentFile || state.isProcessing) return;
     
-    console.log('🎙️ Starting transcription...');
+    // Check if API key is set
+    if (!state.googleApiKey) {
+        showError('Please enter your Google Cloud API key in Transcription Settings.');
+        return;
+    }
+    
+    console.log('🎙️ Starting Google Cloud Speech-to-Text transcription...');
     
     state.isProcessing = true;
     state.subtitles = [];
@@ -305,42 +329,38 @@ async function generateSubtitles() {
     elements.clearBtn.disabled = true;
     
     try {
-        // Create transcriber
-        state.transcriber = new SpeechTranscriber(state.sourceLanguage);
+        // Create Google Speech client if not exists
+        if (!state.googleSpeechClient) {
+            state.googleSpeechClient = new GoogleSpeechProvider(state.googleApiKey);
+        }
+        
+        // Show cost estimate
+        const audioElement = document.createElement('audio');
+        audioElement.src = URL.createObjectURL(state.currentFile);
+        
+        await new Promise((resolve) => {
+            audioElement.onloadedmetadata = resolve;
+        });
+        
+        const durationSeconds = audioElement.duration;
+        URL.revokeObjectURL(audioElement.src);
+        
+        const costEstimate = GoogleSpeechProvider.estimateCost(durationSeconds);
+        console.log('💰 Cost estimate:', costEstimate.message);
+        updateProgress(5, costEstimate.message);
         
         // Transcribe file
-        const subtitles = await state.transcriber.transcribeFile(state.currentFile, {
-            onProgress: (progress) => {
-                // Update progress (interim results)
-                const { percentage } = state.transcriber.getProgress();
-                updateProgress(percentage, 'Transcribing audio...');
-            },
-            onResult: (subtitle, count) => {
-                // New subtitle created
-                console.log(`📝 Subtitle ${count}:`, subtitle.text);
-                state.subtitles.push(subtitle);
-                
-                // Update UI in real-time
-                renderSubtitles();
-                
-                const { percentage } = state.transcriber.getProgress();
-                updateProgress(percentage, `Transcribed ${count} subtitle${count !== 1 ? 's' : ''}...`);
-            },
-            onError: (error) => {
-                console.error('❌ Transcription error:', error);
-                
-                if (error === 'no-speech') {
-                    // Continue, this is normal
-                    return;
-                }
-                
-                showError(`Transcription error: ${error}`);
-            },
-            onComplete: (subtitles) => {
-                console.log('✅ Transcription complete:', subtitles.length, 'subtitles');
-                completeTranscription();
+        const subtitles = await state.googleSpeechClient.transcribe(
+            state.currentFile,
+            state.sourceLanguage,
+            (percentage, message) => {
+                updateProgress(percentage, message);
             }
-        });
+        );
+        
+        state.subtitles = subtitles;
+        console.log('✅ Transcription complete:', subtitles.length, 'subtitles');
+        completeTranscription();
         
     } catch (error) {
         console.error('❌ Failed to generate subtitles:', error);
@@ -643,6 +663,96 @@ function loadTheme() {
     }
     
     document.documentElement.setAttribute('data-theme', state.theme);
+}
+
+/* ============================================
+   Google Cloud Speech-to-Text Functions
+   ============================================ */
+
+/**
+ * Load Google Cloud Settings
+ */
+function loadGoogleCloudSettings() {
+    const savedApiKey = localStorage.getItem('google_api_key');
+    
+    if (savedApiKey) {
+        state.googleApiKey = savedApiKey;
+        elements.googleApiKey.value = '••••••••••••••••';
+        elements.clearGoogleApiKey.style.display = 'inline-flex';
+        state.googleSpeechClient = new GoogleSpeechProvider(savedApiKey);
+        console.log('🔑 Google Cloud API key loaded from storage');
+    }
+}
+
+/**
+ * Toggle Google API Key Visibility
+ */
+function toggleGoogleApiKeyVisibility() {
+    const input = elements.googleApiKey;
+    const icon = elements.toggleGoogleApiKeyVisibility.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+    }
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Save Google API Key
+ */
+function saveGoogleApiKey() {
+    const apiKey = elements.googleApiKey.value.trim();
+    
+    if (!apiKey) {
+        alert('Please enter your Google Cloud API key');
+        return;
+    }
+    
+    // Don't save if it's masked
+    if (apiKey.startsWith('••••')) {
+        alert('API key already saved');
+        return;
+    }
+    
+    state.googleApiKey = apiKey;
+    localStorage.setItem('google_api_key', apiKey);
+    
+    // Create client
+    state.googleSpeechClient = new GoogleSpeechProvider(apiKey);
+    
+    // Mask the key in UI
+    elements.googleApiKey.value = '••••••••••••••••';
+    elements.googleApiKey.type = 'password';
+    elements.clearGoogleApiKey.style.display = 'inline-flex';
+    
+    alert('✅ Google Cloud API key saved successfully!');
+    console.log('🔑 Google Cloud API key saved');
+}
+
+/**
+ * Clear Google API Key
+ */
+function clearGoogleApiKey() {
+    if (!confirm('Are you sure you want to clear your Google Cloud API key?')) {
+        return;
+    }
+    
+    state.googleApiKey = '';
+    state.googleSpeechClient = null;
+    localStorage.removeItem('google_api_key');
+    
+    elements.googleApiKey.value = '';
+    elements.clearGoogleApiKey.style.display = 'none';
+    
+    alert('Google Cloud API key cleared');
+    console.log('🔑 Google Cloud API key cleared');
 }
 
 /* ============================================
