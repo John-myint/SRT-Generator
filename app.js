@@ -364,7 +364,26 @@ function completeTranscription() {
     elements.clearBtn.disabled = false;
     
     if (state.subtitles.length === 0) {
-        showError('No subtitles were generated. Please check your audio quality and try again.');
+        const errorMsg = `No subtitles were generated. Common fixes:
+
+1. Grant microphone permission (even for file uploads)
+2. Ensure audio contains clear speech
+3. Check your internet connection (required for Web Speech API)
+4. Try using Chrome or Edge browser
+5. Check browser console (F12) for detailed errors
+
+Audio quality tips:
+- Clear speech without too much background noise
+- Supported languages: English works best
+- File format: MP3, WAV, MP4 recommended`;
+        
+        showError(errorMsg);
+        console.error('❌ No subtitles generated. Check:', {
+            fileSize: state.currentFile?.size,
+            fileType: state.currentFile?.type,
+            sourceLanguage: state.sourceLanguage,
+            browserSupport: isSpeechRecognitionSupported()
+        });
         return;
     }
     

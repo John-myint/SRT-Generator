@@ -230,7 +230,15 @@ export class SpeechTranscriber {
             };
 
             // Start playback (muted)
-            this.audioElement.play().catch(reject);
+            this.audioElement.play().catch((error) => {
+                console.error('Audio play failed:', error);
+                // Autoplay might be blocked - provide helpful error
+                if (error.name === 'NotAllowedError') {
+                    reject(new Error('Browser blocked audio playback. Please ensure you clicked "Generate Subtitles" button to start.'));
+                } else {
+                    reject(error);
+                }
+            });
         });
     }
 
